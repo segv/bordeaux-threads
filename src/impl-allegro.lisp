@@ -61,6 +61,10 @@ Distributed under the MIT license (see LICENSE file)
   #+(version>= 9)
   (mp:condition-variable-signal condition-variable))
 
+#+(version>= 9)
+(defun condition-broadcast (condition-variable)  
+  (mp:condition-variable-broadcaste condition-variable))
+
 (defun thread-yield ()
   (mp:process-allow-schedule))
 

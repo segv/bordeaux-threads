@@ -60,20 +60,35 @@ Distributed under the MIT license (see LICENSE file)
 
 ;;; Resource contention: condition variables
 
+(defstruct (condition-variable (:constructor %make-condition-variable))
+  name
+  semaphore
+  count)
+
 (defun make-condition-variable (&key name)
-  (declare (ignore name))
-  (ccl:make-semaphore))
+  (%make-condition-variable :name name
+                            :count 0
+                            :semaphore (ccl:make-semaphore)))
 
 (defun condition-wait (condition-variable lock &key timeout)
+  (incf (condition-variable-count condition-variable))
   (release-lock lock)
   (unwind-protect
        (if timeout
-           (ccl:timed-wait-on-semaphore condition-variable timeout)
-           (ccl:wait-on-semaphore condition-variable))
-    (acquire-lock lock t)))
+           (ccl:timed-wait-on-semaphore (condition-variable-semaphore condition-variable) timeout)
+           (ccl:wait-on-semaphore (condition-variable-semaphore condition-variable)))
+    (acquire-lock lock t)
+    (decf (condition-variable-count condition-variable))))
 
 (defun condition-notify (condition-variable)
-  (ccl:signal-semaphore condition-variable))
+  (condition-broadcast condition-variable 1))
+
+(defun condition-broadcast (condition-variable &optional (n nil n-p))
+  (dotimes (i (max 0
+                   (if n-p
+                       (min n (condition-variable-count condition-variable))
+                       (condition-variable-count condition-variable))))
+    (ccl:signal-semaphore (condition-variable-semaphore condition-variable))))
 
 (defun thread-yield ()
   (ccl:process-allow-schedule))

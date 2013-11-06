@@ -68,6 +68,9 @@ Distributed under the MIT license (see LICENSE file)
 (defun condition-notify (condition-variable)
   (sb-thread:condition-notify condition-variable))
 
+(defun condition-broadcast (condition-variable)
+  (sb-thread:condition-broadcast condition-variable))
+
 (defun thread-yield ()
   (sb-thread:release-foreground))
 
