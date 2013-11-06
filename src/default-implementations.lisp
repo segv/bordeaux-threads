@@ -247,6 +247,16 @@ WITH-LOCK-HELD etc etc"
   (declare (ignore condition-variable))
   (values))
 
+(defdfun condition-broadcast (condition-variable)
+  "Notify all of the threads waiting for CONDITION-VARIABLE. The order
+  of wakeup is unspecified and does not necessarily relate to the
+  order that the threads went to sleep in.
+
+  CONDITION-BROADCAST has no useful return value. In an implementation
+  that does not support multiple threads, it has no effect."
+  (declare (ignore condition-variable))
+  (values))
+
 ;;; Timeouts
 
 (defdmacro with-timeout ((timeout) &body body)

@@ -149,6 +149,36 @@ Distributed under the MIT license (see LICENSE file)
           do (condition-wait *condition-variable* *lock*)))
       (is (equal num-procs *shared*)))))
 
+(defvar *busy* nil)
+
+(test condition-broadcast
+  (setf *shared* 1
+        *busy* 0)
+  (let ((*num-procs* 50))
+    (flet ((worker (i)
+             (format t "Thread ~D started.~%" i)
+             (incf *busy*)
+             (with-lock-held (*lock*)
+               (loop
+                 until (zerop *shared*)
+                 do (condition-wait *condition-variable* *lock*)
+                 do (format t "Thread ~D woke up.~%" i))
+               (decf *busy*))))
+      (let ((num-procs 50))
+        (dotimes (i num-procs)
+          (let ((i i))
+            (make-thread (lambda () (funcall #'worker i))
+                         :name (format nil "Proc #~D" i))))))
+
+    (loop
+      until (= *num-procs* *busy*)
+      finally (setf *shared* 0))
+    
+    (condition-broadcast *condition-variable*)
+
+    (loop until (zerop *busy*)
+          finally (pass))))
+
 ;; Generally safe sanity check for the locks and single-notify
 #+(and lispworks (not lispworks6))
 (test condition-variable-lw
